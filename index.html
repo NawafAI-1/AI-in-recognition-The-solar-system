@@ -1,8 +1,8 @@
-
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تصنيف الصور باستخدام Teachable Machine</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
@@ -10,82 +10,113 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f4f4f4;
+      background-color: #f5f5f5;
       padding: 40px;
     }
+
     h1 {
-      color: #333;
+      color: #1f2937;
+      margin-bottom: 20px;
     }
-    input, button {
-      margin: 10px;
-      padding: 10px;
-      font-size: 16px;
+
+    #label-container {
+      margin-top: 30px;
+      background-color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: right;
     }
-    #label-container div {
-      margin-top: 5px;
-      font-size: 18px;
-      color: #1d4ed8;
+
+    button {
+      margin-top: 10px;
+      padding: 12px 24px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .box {
-      background: white;
-      border-radius: 10px;
-      padding: 30px;
-      width: 500px;
-      margin: 0 auto;
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+    }
+
+    img {
+      max-width: 300px;
+      margin-top: 10px;
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>تصنيف الصور باستخدام Teachable Machine</h1>
-    <input type="file" id="upload" accept="image/*"><br>
-    <button onclick="predict()">تصنيف الصورة</button>
-    <div id="label-container"></div>
-  </div>
+  <h1>تصنيف الصور باستخدام Teachable Machine</h1>
+
+  <input type="file" id="imageUpload" accept="image/*" />
+  <br>
+  <button onclick="predict()">تصنيف الصورة</button>
+  <br>
+  <img id="preview" style="display:none;" />
+  <div id="label-container"></div>
 
   <script type="text/javascript">
-    const URL = "my_model/";
-    let model, maxPredictions, image;
+    const URL = "./";
+    let model, maxPredictions;
 
     async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
-      try {
-        model = await tmImage.load(modelURL, metadataURL);
-        maxPredictions = model.getTotalClasses();
-      } catch (err) {
-        alert("⚠️ لم يتم تحميل النموذج. تأكد من أن الملفات موجودة بشكل صحيح.");
-        console.error(err);
-      }
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
     }
 
     async function predict() {
-      const fileInput = document.getElementById("upload");
-      if (!fileInput.files.length || !model) {
+      const fileInput = document.getElementById("imageUpload");
+      const file = fileInput.files[0];
+      const labelContainer = document.getElementById("label-container");
+      const preview = document.getElementById("preview");
+
+      if (!file) {
         alert("يرجى تحميل صورة والتأكد من تحميل النموذج.");
         return;
       }
 
-      const file = fileInput.files[0];
+      if (!model) {
+        try {
+          await loadModel();
+        } catch (err) {
+          alert("فشل في تحميل النموذج. تحقق من المسار.");
+          return;
+        }
+      }
+
       const reader = new FileReader();
-      reader.onload = async function (e) {
-        image = new Image();
-        image.src = e.target.result;
-        image.onload = async () => {
-          const prediction = await model.predict(image);
-          const labelContainer = document.getElementById("label-container");
+      reader.onload = async function () {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = async function () {
+          preview.src = img.src;
+          preview.style.display = "block";
+
+          const prediction = await model.predict(img);
           labelContainer.innerHTML = "";
+
           prediction.forEach(p => {
-            const percent = (p.probability * 100).toFixed(2) + "%";
-            labelContainer.innerHTML += `<div><b>${p.className}:</b> ${percent}</div>`;
+            const div = document.createElement("div");
+            div.textContent = `${p.className}: ${(p.probability * 100).toFixed(2)}%`;
+            labelContainer.appendChild(div);
           });
         };
       };
       reader.readAsDataURL(file);
     }
-
-    loadModel();
   </script>
 </body>
 </html>
