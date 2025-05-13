@@ -1,70 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Teachable Machine Image Classifier</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
-  <style>
-    body { font-family: Arial; text-align: center; padding: 40px; background: #f4f4f4; }
-    input[type="file"] { margin: 20px; }
-    img { max-width: 250px; margin: 20px; border: 2px solid #ccc; border-radius: 10px; }
-    #label-container { margin: 20px auto; background: #fff; padding: 10px; border-radius: 10px; width: 300px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Teachable Machine Image Model</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            text-align: center;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+
+        button:hover {
+            background-color: #1e40af;
+        }
+
+        #webcam-container {
+            margin: 0 auto;
+            width: 200px;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        #label-container {
+            font-size: 18px;
+            color: #111827;
+            background-color: #e5e7eb;
+            padding: 10px;
+            border-radius: 10px;
+            width: 220px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
-  <h1>Teachable Machine Image Classifier</h1>
-  <input type="file" accept="image/*" id="upload" disabled>
-  <div id="image-container"></div>
-  <div id="label-container"></div>
+    <h1>Teachable Machine Image Classifier</h1>
+    <button type="button" onclick="init()">Start</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
 
-  <script>
-    const URL = "https://teachablemachine.withgoogle.com/models/Uqzok8kFX/"; // <-- UPDATE THIS IF WRONG
-    let model;
+    <script type="text/javascript">
+        const URL = "https://teachablemachine.withgoogle.com/models/Uqzok8kFX/";
+        let model, webcam, labelContainer, maxPredictions;
 
-    async function loadModel() {
-      try {
-        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-        console.log("✅ Model loaded");
-        console.log("📦 Classes:", model.getClassLabels());
-        document.getElementById("upload").disabled = false;
-      } catch (error) {
-        console.error("❌ Failed to load model or metadata:", error);
-      }
-    }
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
 
-    loadModel();
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
 
-    document.getElementById("upload").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (!file || !model) {
-        console.warn("⚠️ No file or model not ready.");
-        return;
-      }
+            const flip = true;
+            webcam = new tmImage.Webcam(200, 200, flip);
+            await webcam.setup();
+            await webcam.play();
+            window.requestAnimationFrame(loop);
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = async function() {
-          document.getElementById("image-container").innerHTML = '';
-          document.getElementById("label-container").innerHTML = '';
-          document.getElementById("image-container").appendChild(img);
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
 
-          try {
-            const prediction = await model.predict(img);
-            prediction.forEach(p => {
-              const div = document.createElement("div");
-              div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
-              document.getElementById("label-container").appendChild(div);
-            });
-            console.log("✅ Prediction result:", prediction);
-          } catch (err) {
-            console.error("❌ Prediction error:", err);
-          }
-        };
-      };
-      reader.readAsDataURL(file);
-    });
-  </script>
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        }
+    </script>
 </body>
 </html>
