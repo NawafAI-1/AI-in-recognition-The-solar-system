@@ -1,125 +1,78 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <title>تصنيف الصور باستخدام Teachable Machine</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-    <style>
-        body {
-            direction: rtl;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            margin-top: 60px;
-        }
-
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 400px;
-            margin: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        #label-container div {
-            margin-top: 10px;
-            font-size: 18px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        input[type="file"] {
-            margin-top: 10px;
-        }
-
-        img {
-            max-width: 100%;
-            max-height: 200px;
-            margin-top: 15px;
-            border-radius: 6px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>تصنيف الصور باستخدام Teachable Machine</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 40px;
+    }
+    .result {
+      direction: rtl;
+      font-size: 18px;
+      color: #333;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>تصنيف الصور باستخدام Teachable Machine</h1>
-        <input type="file" id="imageInput" accept="image/*"><br>
-        <img id="uploadedImage" src="#" alt="..." style="display: none;">
-        <br>
-        <button onclick="predictImage()">تصنيف الصورة</button>
-        <div id="label-container"></div>
-    </div>
+  <h2>تصنيف الصور باستخدام Teachable Machine</h2>
 
-    <script>
-        const URL = "./my_model/";
-        let model;
+  <input type="file" id="imageInput" accept="image/*" />
+  <button onclick="predict()">تصنيف الصورة</button>
 
-        async function loadModel() {
-            try {
-                model = await tmImage.load(URL + "model.json", URL + "metadata.json");
-            } catch (err) {
-                alert("فشل تحميل النموذج. تأكد من أن ملفات النموذج موجودة في المجلد 'my_model'.");
-                console.error(err);
-            }
-        }
+  <div class="result" id="resultContainer"></div>
 
-        loadModel();
+  <script>
+    const URL = "my_model/";
+    let model, maxPredictions;
 
-        async function predictImage() {
-            const input = document.getElementById("imageInput");
-            const img = document.getElementById("uploadedImage");
-            const labelContainer = document.getElementById("label-container");
-            labelContainer.innerHTML = "";
+    async function loadModel() {
+      try {
+        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+        maxPredictions = model.getTotalClasses();
+      } catch (err) {
+        alert("فشل في تحميل النموذج: تحقق من المسار.");
+        console.error(err);
+      }
+    }
 
-            if (!model) {
-                alert("يرجى التأكد من تحميل النموذج بنجاح.");
-                return;
-            }
+    async function predict() {
+      const input = document.getElementById('imageInput');
+      const resultContainer = document.getElementById('resultContainer');
 
-            if (input.files.length === 0) {
-                alert("يرجى تحميل صورة أولاً.");
-                return;
-            }
+      if (!model) {
+        alert("يرجى تحميل النموذج أولاً.");
+        return;
+      }
 
-            const file = input.files[0];
-            const reader = new FileReader();
+      if (input.files.length === 0) {
+        alert("يرجى تحميل صورة أولاً.");
+        return;
+      }
 
-            reader.onload = async function(e) {
-                img.src = e.target.result;
-                img.style.display = "block";
+      const file = input.files[0];
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        const prediction = await model.predict(img);
+        resultContainer.innerHTML = '';
+        prediction.forEach(p => {
+          resultContainer.innerHTML += `<div>${p.className}: ${(p.probability * 100).toFixed(2)}%</div>`;
+        });
+      };
+    }
 
-                const imageElement = new Image();
-                imageElement.src = e.target.result;
-                imageElement.onload = async () => {
-                    const prediction = await model.predict(imageElement);
-                    prediction.forEach(p => {
-                        const div = document.createElement("div");
-                        div.textContent = `${p.className}: ${(p.probability * 100).toFixed(2)}%`;
-                        labelContainer.appendChild(div);
-                    });
-                };
-            };
-
-            reader.readAsDataURL(file);
-        }
-    </script>
+    loadModel();
+  </script>
 </body>
 </html>
