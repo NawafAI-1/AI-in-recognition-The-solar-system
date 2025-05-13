@@ -12,12 +12,10 @@
       text-align: center;
       padding: 40px;
     }
-
     h1 {
       color: #1f2937;
     }
-
-    input[type="file"], button {
+    input, button {
       margin: 10px;
       padding: 10px 20px;
       font-size: 16px;
@@ -25,28 +23,23 @@
       border-radius: 6px;
       cursor: pointer;
     }
-
     input[type="file"] {
       background-color: #2563eb;
       color: white;
     }
-
     button {
       background-color: #059669;
       color: white;
     }
-
     button:hover {
       background-color: #047857;
     }
-
     #image-container img {
       max-width: 200px;
       border-radius: 12px;
       margin-top: 20px;
       border: 2px solid #ddd;
     }
-
     #label-container {
       margin-top: 20px;
       font-size: 18px;
@@ -67,19 +60,20 @@
   <div id="label-container"></div>
 
   <script type="text/javascript">
-    const URL = "https://nawafal-1.github.io/AI-in-recognition-The-solar-system/model/";
+    const URL = "https://nawafai-1.github.io/AI-in-recognition-The-solar-system/model/";
     let model, maxPredictions;
     let currentImage = null;
 
-    window.onload = async () => {
+    // Load model
+    async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
       model = await tmImage.load(modelURL, metadataURL);
       maxPredictions = model.getTotalClasses();
-      console.log("✅ Model loaded");
-    };
+      console.log("✅ Model loaded.");
+    }
 
-    // Load and preview image
+    // Image upload handler
     document.getElementById("upload").addEventListener("change", function (event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -88,6 +82,7 @@
       reader.onload = function (e) {
         const img = new Image();
         img.src = e.target.result;
+
         img.onload = function () {
           currentImage = img;
           document.getElementById("image-container").innerHTML = "";
@@ -98,7 +93,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Predict when button is clicked
+    // Predict handler
     document.getElementById("predictBtn").addEventListener("click", async () => {
       if (!currentImage || !model) {
         alert("Please upload an image first.");
@@ -115,6 +110,9 @@
         labelContainer.appendChild(div);
       });
     });
+
+    // Load model on page load
+    window.addEventListener("load", loadModel);
   </script>
 </body>
 </html>
