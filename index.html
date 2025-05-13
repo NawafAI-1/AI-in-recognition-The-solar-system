@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>تصنيف الصور باستخدام Teachable Machine</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      direction: rtl;
+      background-color: #f4f4f4;
+    }
+    .container {
+      margin-top: 50px;
+      background-color: white;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #label-container div {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>تصنيف الصور باستخدام Teachable Machine</h1>
+    <input type="file" id="imageUpload" accept="image/*">
+    <br>
+    <button onclick="predict()">تصنيف الصورة</button>
+    <div id="label-container"></div>
+  </div>
+
+  <script type="text/javascript">
+    const URL = "https://nawafai-1.github.io/AI-in-recognition-The-solar-system/my_model/";
+    let model;
+
+    async function loadModel() {
+      try {
+        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+        console.log("✅ النموذج تم تحميله بنجاح");
+      } catch (error) {
+        alert("❌ فشل في تحميل النموذج: تحقق من المسار.");
+        console.error(error);
+      }
+    }
+
+    async function predict() {
+      const fileInput = document.getElementById("imageUpload");
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("يرجى تحميل صورة أولاً");
+        return;
+      }
+      if (!model) {
+        alert("يرجى تحميل النموذج أولاً.");
+        return;
+      }
+
+      const image = document.createElement("img");
+      image.src = URL.createObjectURL(fileInput.files[0]);
+      image.onload = async () => {
+        const prediction = await model.predict(image);
+        const labelContainer = document.getElementById("label-container");
+        labelContainer.innerHTML = "";
+        prediction.forEach(p => {
+          const label = document.createElement("div");
+          label.textContent = `${p.className}: ${(p.probability * 100).toFixed(2)}%`;
+          labelContainer.appendChild(label);
+        });
+      };
+    }
+
+    window.onload = loadModel;
+  </script>
+</body>
+</html>
