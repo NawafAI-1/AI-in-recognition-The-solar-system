@@ -71,7 +71,6 @@
     let model, maxPredictions;
     let currentImage = null;
 
-    // Load model on page load
     window.onload = async () => {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
@@ -99,7 +98,7 @@
       reader.readAsDataURL(file);
     });
 
-    
+    // Predict when button is clicked
     document.getElementById("predictBtn").addEventListener("click", async () => {
       if (!currentImage || !model) {
         alert("Please upload an image first.");
