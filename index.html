@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Image Classifier</title>
+    <title>Teachable Machine Image Classifier</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
     <style>
@@ -12,23 +12,19 @@
             text-align: center;
             padding: 40px;
         }
-
         h1 {
             color: #333;
         }
-
         input[type="file"] {
             padding: 10px;
             margin: 20px;
         }
-
         img {
             max-width: 250px;
             margin-top: 20px;
             border-radius: 10px;
             border: 2px solid #ccc;
         }
-
         #label-container {
             margin-top: 20px;
             background: #eee;
@@ -51,38 +47,49 @@
         const URL = "https://teachablemachine.withgoogle.com/models/Uqzok8kFX/";
         let model, maxPredictions;
 
-        // Load the model
         async function loadModel() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-            document.getElementById("upload").disabled = false; // Enable upload after model loads
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                console.log("Model loaded successfully");
+                document.getElementById("upload").disabled = false;
+            } catch (error) {
+                console.error("Error loading model:", error);
+            }
         }
 
-        loadModel(); // Start loading model on page load
+        loadModel(); // Load model when page loads
 
         document.getElementById("upload").addEventListener("change", async function (event) {
             const file = event.target.files[0];
-            if (!file || !model) return;
+            if (!file || !model) {
+                console.warn("Model not ready or no file selected");
+                return;
+            }
 
             const reader = new FileReader();
-            reader.onload = async function (e) {
+            reader.onload = function (e) {
                 const img = new Image();
-                img.src = e.target.result;
                 img.onload = async function () {
                     document.getElementById("image-container").innerHTML = '';
+                    document.getElementById("label-container").innerHTML = '';
                     document.getElementById("image-container").appendChild(img);
 
-                    const prediction = await model.predict(img);
-                    const labelContainer = document.getElementById("label-container");
-                    labelContainer.innerHTML = '';
-                    prediction.forEach(p => {
-                        const div = document.createElement("div");
-                        div.innerText = `${p.className}: ${p.probability.toFixed(2)}`;
-                        labelContainer.appendChild(div);
-                    });
+                    try {
+                        const prediction = await model.predict(img);
+                        prediction.forEach(p => {
+                            const div = document.createElement("div");
+                            div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
+                            document.getElementById("label-container").appendChild(div);
+                        });
+                        console.log("Prediction success:", prediction);
+                    } catch (err) {
+                        console.error("Prediction error:", err);
+                    }
                 };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         });
