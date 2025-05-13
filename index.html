@@ -1,108 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Teachable Machine Image Classifier</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 40px;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        input[type="file"] {
-            padding: 10px;
-            margin: 20px;
-        }
-
-        img {
-            max-width: 250px;
-            margin-top: 20px;
-            border-radius: 10px;
-            border: 2px solid #ccc;
-        }
-
-        #label-container {
-            margin-top: 20px;
-            background: #eee;
-            padding: 15px;
-            border-radius: 8px;
-            width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            color: #111;
-        }
-    </style>
+  <title>Teachable Machine Image Classifier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 40px; background: #f4f4f4; }
+    input[type="file"] { margin: 20px; }
+    img { max-width: 250px; margin: 20px; border: 2px solid #ccc; border-radius: 10px; }
+    #label-container { margin: 20px auto; background: #fff; padding: 10px; border-radius: 10px; width: 300px; }
+  </style>
 </head>
 <body>
-    <h1>Teachable Machine Image Classifier</h1>
-    <input type="file" accept="image/*" id="upload" disabled>
-    <div id="image-container"></div>
-    <div id="label-container"></div>
+  <h1>Teachable Machine Image Classifier</h1>
+  <input type="file" accept="image/*" id="upload" disabled>
+  <div id="image-container"></div>
+  <div id="label-container"></div>
 
-    <script type="text/javascript">
-        const URL = "https://teachablemachine.withgoogle.com/models/Uqzok8kFX/";
-        let model, maxPredictions;
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/Uqzok8kFX/"; // <-- UPDATE THIS IF WRONG
+    let model;
 
-        async function loadModel() {
-            try {
-                const modelURL = URL + "model.json";
-                const metadataURL = URL + "metadata.json";
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
+    async function loadModel() {
+      try {
+        model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+        console.log("✅ Model loaded");
+        console.log("📦 Classes:", model.getClassLabels());
+        document.getElementById("upload").disabled = false;
+      } catch (error) {
+        console.error("❌ Failed to load model or metadata:", error);
+      }
+    }
 
-                // ✅ Log metadata labels to console
-                console.log("📦 Classes from metadata:", model.getClassLabels());
+    loadModel();
 
-                // Enable file upload after model loads
-                document.getElementById("upload").disabled = false;
-                console.log("✅ Model loaded and ready.");
-            } catch (error) {
-                console.error("❌ Error loading model or metadata:", error);
-            }
-        }
+    document.getElementById("upload").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file || !model) {
+        console.warn("⚠️ No file or model not ready.");
+        return;
+      }
 
-        loadModel(); // Load model on page load
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = async function() {
+          document.getElementById("image-container").innerHTML = '';
+          document.getElementById("label-container").innerHTML = '';
+          document.getElementById("image-container").appendChild(img);
 
-        document.getElementById("upload").addEventListener("change", async function (event) {
-            const file = event.target.files[0];
-            if (!file || !model) {
-                console.warn("⚠️ No file selected or model not ready.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = async function () {
-                    document.getElementById("image-container").innerHTML = '';
-                    document.getElementById("label-container").innerHTML = '';
-                    document.getElementById("image-container").appendChild(img);
-
-                    try {
-                        const prediction = await model.predict(img);
-                        prediction.forEach(p => {
-                            const div = document.createElement("div");
-                            div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
-                            document.getElementById("label-container").appendChild(div);
-                        });
-
-                        console.log("✅ Prediction complete:", prediction);
-                    } catch (err) {
-                        console.error("❌ Prediction error:", err);
-                    }
-                };
-            };
-            reader.readAsDataURL(file);
-        });
-    </script>
+          try {
+            const prediction = await model.predict(img);
+            prediction.forEach(p => {
+              const div = document.createElement("div");
+              div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
+              document.getElementById("label-container").appendChild(div);
+            });
+            console.log("✅ Prediction result:", prediction);
+          } catch (err) {
+            console.error("❌ Prediction error:", err);
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
 </body>
 </html>
