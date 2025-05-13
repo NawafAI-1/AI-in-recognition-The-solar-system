@@ -12,19 +12,23 @@
             text-align: center;
             padding: 40px;
         }
+
         h1 {
             color: #333;
         }
+
         input[type="file"] {
             padding: 10px;
             margin: 20px;
         }
+
         img {
             max-width: 250px;
             margin-top: 20px;
             border-radius: 10px;
             border: 2px solid #ccc;
         }
+
         #label-container {
             margin-top: 20px;
             background: #eee;
@@ -53,25 +57,31 @@
                 const metadataURL = URL + "metadata.json";
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
-                console.log("Model loaded successfully");
+
+                // ✅ Log metadata labels to console
+                console.log("📦 Classes from metadata:", model.getClassLabels());
+
+                // Enable file upload after model loads
                 document.getElementById("upload").disabled = false;
+                console.log("✅ Model loaded and ready.");
             } catch (error) {
-                console.error("Error loading model:", error);
+                console.error("❌ Error loading model or metadata:", error);
             }
         }
 
-        loadModel(); // Load model when page loads
+        loadModel(); // Load model on page load
 
         document.getElementById("upload").addEventListener("change", async function (event) {
             const file = event.target.files[0];
             if (!file || !model) {
-                console.warn("Model not ready or no file selected");
+                console.warn("⚠️ No file selected or model not ready.");
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = function (e) {
                 const img = new Image();
+                img.src = e.target.result;
                 img.onload = async function () {
                     document.getElementById("image-container").innerHTML = '';
                     document.getElementById("label-container").innerHTML = '';
@@ -84,12 +94,12 @@
                             div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
                             document.getElementById("label-container").appendChild(div);
                         });
-                        console.log("Prediction success:", prediction);
+
+                        console.log("✅ Prediction complete:", prediction);
                     } catch (err) {
-                        console.error("Prediction error:", err);
+                        console.error("❌ Prediction error:", err);
                     }
                 };
-                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         });
