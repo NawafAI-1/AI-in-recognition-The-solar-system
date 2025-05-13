@@ -2,78 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Teachable Machine Image Classifier</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <title>Teachable Machine Classifier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f4f6;
-      text-align: center;
-      padding: 40px;
-    }
-    h1 {
-      color: #1f2937;
-    }
-    input, button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    input[type="file"] {
-      background-color: #2563eb;
-      color: white;
-    }
-    button {
-      background-color: #059669;
-      color: white;
-    }
-    button:hover {
-      background-color: #047857;
-    }
-    #image-container img {
-      max-width: 200px;
-      border-radius: 12px;
-      margin-top: 20px;
-      border: 2px solid #ddd;
-    }
-    #label-container {
-      margin-top: 20px;
-      font-size: 18px;
-      background-color: #e5e7eb;
-      padding: 10px;
-      border-radius: 10px;
-      width: 250px;
-      margin-left: auto;
-      margin-right: auto;
-    }
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 40px; }
+    #image-container img { max-width: 200px; margin-top: 20px; }
+    #label-container { margin-top: 20px; font-size: 18px; }
+    input, button { padding: 10px 20px; font-size: 16px; margin: 10px; }
   </style>
 </head>
 <body>
   <h1>Teachable Machine Image Classifier</h1>
   <input type="file" id="upload" accept="image/*" />
-  <button id="predictBtn">Predict</button>
+  <button onclick="predict()">Predict</button>
   <div id="image-container"></div>
   <div id="label-container"></div>
 
-  <script type="text/javascript">
+  <script>
     const URL = "https://nawafai-1.github.io/AI-in-recognition-The-solar-system/model/";
     let model, maxPredictions;
     let currentImage = null;
 
-    // Load model
     async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
-      model = await tmImage.load(modelURL, metadataURL);
-      maxPredictions = model.getTotalClasses();
-      console.log("✅ Model loaded.");
+      try {
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        console.log("✅ Model loaded");
+      } catch (err) {
+        alert("❌ Could not load model. Check .nojekyll and file names.");
+      }
     }
 
-    // Image upload handler
     document.getElementById("upload").addEventListener("change", function (event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -82,7 +44,6 @@
       reader.onload = function (e) {
         const img = new Image();
         img.src = e.target.result;
-
         img.onload = function () {
           currentImage = img;
           document.getElementById("image-container").innerHTML = "";
@@ -93,8 +54,7 @@
       reader.readAsDataURL(file);
     });
 
-    // Predict handler
-    document.getElementById("predictBtn").addEventListener("click", async () => {
+    async function predict() {
       if (!currentImage || !model) {
         alert("Please upload an image first.");
         return;
@@ -103,16 +63,14 @@
       const prediction = await model.predict(currentImage);
       const labelContainer = document.getElementById("label-container");
       labelContainer.innerHTML = "";
-
       prediction.forEach(p => {
         const div = document.createElement("div");
-        div.textContent = `${p.className}: ${p.probability.toFixed(2)}`;
+        div.textContent = `${p.className}: ${(p.probability * 100).toFixed(2)}%`;
         labelContainer.appendChild(div);
       });
-    });
+    }
 
-    // Load model on page load
-    window.addEventListener("load", loadModel);
+    window.onload = loadModel;
   </script>
 </body>
 </html>
